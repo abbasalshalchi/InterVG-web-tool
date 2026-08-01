@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IVG — vanilla example</title>
+<style>
+  body { margin: 0; padding: 24px; font: 14px/1.5 system-ui, sans-serif;
+         background: #fff; color: #14161a; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p.lead { color: #666; margin: 0 0 20px; }
+  section { margin-bottom: 32px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em;
+       color: #666; margin: 0 0 8px; }
+  .frame { border: 1px solid #e2e5ea; border-radius: 10px; overflow: hidden;
+           height: 320px; background: #fff; }
+  ivg-player { height: 100%; }
+  img.raw { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  button { font: inherit; padding: 6px 12px; border: 1px solid #d7dbe0;
+           background: #fff; border-radius: 6px; cursor: pointer; }
+  button:hover { border-color: #2f6feb; color: #2f6feb; }
+  code { background: #f4f5f7; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  #picked { color: #666; }
+</style>
+</head>
+<body>
+
+<h1>IVG — one file, three ways to use it</h1>
+<p class="lead">All three panels below load the same <code>site.svg</code>.</p>
+
+<section>
+  <h2>1 · No JavaScript at all</h2>
+  <p>It is a valid SVG, so a plain <code>&lt;img&gt;</code> renders the resting state.</p>
+  <div class="frame"><img class="raw" src="../../out/site.svg" alt="resting state"></div>
+</section>
+
+<section>
+  <h2>2 · The element — works in any framework</h2>
+  <p><code>&lt;ivg-player src="site.ivg" autoplay loop&gt;&lt;/ivg-player&gt;</code></p>
+  <div class="frame">
+    <ivg-player id="a" src="../../out/site.svg" autoplay loop></ivg-player>
+  </div>
+  <div class="row">
+    <button onclick="a.play()">Play</button>
+    <button onclick="a.reverse()">Reverse</button>
+    <button onclick="a.pause()">Pause</button>
+    <button onclick="a.showState('end')">Cut to static state</button>
+    <button onclick="a.showAnimation()">Back to animation</button>
+  </div>
+</section>
+
+<section>
+  <h2>3 · The API — live data binding and hit-testing</h2>
+  <div class="frame"><div id="stage" style="height:100%"></div></div>
+  <div class="row" id="groups"></div>
+  <p id="picked">Click the drawing — hit-testing works while it plays.</p>
+</section>
+
+<script type="module">
+import { load } from '../src/index.js';
+
+const anim = await load('../../out/site.svg', document.getElementById('stage'), {
+  autoplay: true, loop: true,
+});
+
+// one button per group: stands in for a sensor tripping mid-transition
+const alarmed = new Set();
+for (const group of anim.groups) {
+  const b = document.createElement('button');
+  b.textContent = group;
+  b.onclick = () => {
+    if (alarmed.has(group)) { alarmed.delete(group); anim.setGroupColor(group, null); }
+    else { alarmed.add(group); anim.setGroupColor(group, '#e5484d'); }
+  };
+  document.getElementById('groups').appendChild(b);
+}
+
+anim.canvas.addEventListener('click', (e) => {
+  const hit = anim.pick(e.clientX, e.clientY);
+  document.getElementById('picked').textContent =
+    hit ? `${hit.id} — group ${hit.group}` : 'nothing there';
+});
+</script>
+</body>
+</html>

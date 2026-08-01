@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>IVG bench</title></head>
+<body>
+<pre id="out">running…</pre>
+<script type="module">
+import { IVGPlayer, fetchDocument } from '../src/player.js';
+
+const src = new URLSearchParams(location.search).get('src') || '../../out/site.svg';
+const doc = await fetchDocument(src);
+
+function bench(label, opts) {
+  const c = document.createElement('canvas');
+  c.style.cssText = 'width:960px;height:540px;position:fixed;left:-9999px';
+  document.body.appendChild(c);
+  const p = new IVGPlayer(c, doc, { autoResize: false, background: '#fff', ...opts });
+  p.dpr = 1; p.canvas.width = 960; p.canvas.height = 540;
+  p.scaleX = p.scaleY = Math.min(960 / doc.w, 540 / doc.h);
+  p.offX = p.offY = 0;
+  for (let i = 0; i < 30; i++) p.render(i / 30 * p.duration);
+  const N = 200, t0 = performance.now();
+  for (let i = 0; i < N; i++) p.render(i / N * p.duration);
+  const ms = (performance.now() - t0) / N;
+  const drawn = p.visible;
+  p.destroy(); c.remove();
+  return `${label.padEnd(28)} ${ms.toFixed(2).padStart(6)} ms   drawn ${drawn}`;
+}
+
+// run each config twice, interleaved, so JIT warmth cannot be mistaken for a
+// difference between them
+const lines = [
+  `document: ${doc.els.length} elements, ${doc.w}x${doc.h}, ${doc.samples} samples`,
+  bench('default (1st)', {}),
+  bench('seamFix off (1st)', { seamFix: false }),
+  bench('default (2nd)', {}),
+  bench('seamFix off (2nd)', { seamFix: false }),
+  bench('strokes only', { seamFix: false, fillsOnly: false }),
+];
+document.getElementById('out').textContent = lines.join('\n');
+</script>
+</body>
+</html>

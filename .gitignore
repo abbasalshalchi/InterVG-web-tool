@@ -1,0 +1,38 @@
+# Node dependencies
+node_modules/
+
+# Package manager state
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build and test output
+dist/
+build/
+coverage/
+out/
+.temp/
+tmp/
+
+# TypeScript and bundler caches
+*.tsbuildinfo
+.vite/
+.parcel-cache/
+.rollup.cache/
+
+# Generated IVG exports
+*.min.svg
+*.start.svg
+*.end.svg
+
+# Packaged archives
+*.tgz
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor folders
+.idea/

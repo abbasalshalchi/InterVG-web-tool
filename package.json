@@ -1,0 +1,35 @@
+{
+  "name": "ivg",
+  "version": "0.1.0",
+  "description": "Interactive vector animations for the web. An .ivg is a valid SVG that also animates.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": ["svg", "animation", "vector", "canvas", "blender", "lottie-alternative", "ivg"],
+  "sideEffects": ["./src/index.js"],
+  "exports": {
+    ".": "./src/index.js",
+    "./react": "./src/react.js",
+    "./player": "./src/player.js",
+    "./element": "./src/element.js",
+    "./package.json": "./package.json"
+  },
+  "main": "./src/index.js",
+  "module": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "files": ["src", "README.md"],
+  "bin": {
+    "ivg": "./bin/ivg.js"
+  },
+  "peerDependencies": {
+    "react": ">=16.8"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true }
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "test": "node bin/ivg.js info ../out/site.ivg"
+  }
+}
