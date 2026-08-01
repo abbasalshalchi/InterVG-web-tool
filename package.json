@@ -1,5 +1,5 @@
 {
-  "name": "ivg",
+  "name": "intervg",
   "version": "0.1.0",
   "description": "Interactive vector animations for the web. An .ivg is a valid SVG that also animates.",
   "type": "module",
