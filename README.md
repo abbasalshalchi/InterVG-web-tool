@@ -279,4 +279,11 @@ occlusion ordering — happens once at bake time; playback is 2D interpolation.
 
 ## Licence
 
-MIT.
+**AGPL-3.0-or-later** — see [LICENSE](./LICENSE). Free to use in open-source
+projects, personal work and evaluation.
+
+Shipping it inside a closed-source product needs a **commercial licence**, which
+lifts the AGPL's source-disclosure requirement. See [COMMERCIAL.md](./COMMERCIAL.md).
+
+**The `.svg` files you bake are yours.** Output carries no obligation from this
+project — only the runtime is licensed.

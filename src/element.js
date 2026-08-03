@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// InterVG -- Copyright (C) 2026 Abbas Alshalchi
+// Also available under a commercial licence; see COMMERCIAL.md
 /**
  * <ivg-player> -- a custom element, so it works the same in Vue, Svelte,
  * Angular, plain HTML, and React 19+ without a framework-specific wrapper.

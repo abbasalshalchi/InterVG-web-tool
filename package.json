@@ -3,7 +3,11 @@
   "version": "0.1.0",
   "description": "Interactive vector animations for the web. An .ivg is a valid SVG that also animates.",
   "type": "module",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
+  "author": "Abbas Alshalchi <abbasalshalchi@gmail.com>",
+  "repository": { "type": "git", "url": "git+https://github.com/abbasalshalchi/InterVG-web-tool.git" },
+  "bugs": { "url": "https://github.com/abbasalshalchi/InterVG-web-tool/issues" },
+  "homepage": "https://github.com/abbasalshalchi/InterVG-web-tool#readme",
   "keywords": ["svg", "animation", "vector", "canvas", "blender", "lottie-alternative", "ivg"],
   "sideEffects": ["./src/index.js"],
   "exports": {
@@ -16,7 +20,7 @@
   "main": "./src/index.js",
   "module": "./src/index.js",
   "types": "./src/index.d.ts",
-  "files": ["src", "README.md"],
+  "files": ["src", "README.md", "LICENSE", "COMMERCIAL.md"],
   "bin": {
     "ivg": "./bin/ivg.js"
   },

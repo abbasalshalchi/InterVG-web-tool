@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// InterVG -- Copyright (C) 2026 Abbas Alshalchi
+// Also available under a commercial licence; see COMMERCIAL.md
 /**
  * IVG player -- Canvas 2D renderer for .ivg vector animations.
  *
