@@ -348,6 +348,12 @@ export class IVGPlayer {
     else if (this.direction > 0 && this.time >= this.duration) this.time = 0;
     if (this.playing) return this;
     this.playing = true;
+    // Paint the starting frame now rather than leaving it to the first tick.
+    // requestAnimationFrame does not run until the next frame, so whatever was
+    // on the canvas stays up for one frame -- blank on a fresh player, and for
+    // a reverse it is frame 0, the *wrong end* of the clip, because the jump to
+    // `duration` above only moves the clock.
+    this.render(this.time);
     this._last = null;
     this._raf = requestAnimationFrame(this._tick);
     return this;
