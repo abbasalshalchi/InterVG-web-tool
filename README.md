@@ -51,6 +51,23 @@ Vue warns about unknown elements unless you tell it this one is custom:
 vue({ template: { compilerOptions: { isCustomElement: (tag) => tag === 'ivg-player' } } })
 ```
 
+### Nuxt
+
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  vue: { template: { compilerOptions: { isCustomElement: (tag) => tag === 'ivg-player' } } },
+})
+```
+
+The package is safe to import from a server-rendered component — it does not
+touch `HTMLElement` or `customElements` until the browser registers the element.
+Reference the file by URL rather than importing its contents:
+
+```js
+import towerUrl from '~/assets/anim/tower.svg?url';
+```
+
 ### React
 
 React 18 and earlier cannot set properties or listen for events on custom
@@ -72,6 +89,48 @@ anim.play({ loop: true });
 ```
 
 ---
+
+## Choosing a clip, and which way to play it
+
+**A filename never tells you which way a camera moves.** `tower.bts_cam.svg`
+could be a move towards the cabinet or away from it, and guessing gives you a
+transition that runs backwards — which reads as broken artwork rather than
+broken wiring. Do not infer it from the name. Ask:
+
+```bash
+npx ivg info anim/tower.bts_cam.svg
+#   motion     moves OUT, x0.42 — play() goes close -> wide, reverse() goes wide -> close
+```
+
+So for that file, zooming *out* of the cabinet is `play()`, and zooming *in* is
+`reverse()`. Every clip carries this in its metadata, readable at runtime:
+
+```js
+anim.doc.motion   // { scale: 0.42, direction: 'out' }
+```
+
+For a set of clips, generate an index once and drive your UI from it instead of
+from a hand-written filename map:
+
+```bash
+npx ivg manifest anim/          # writes anim/index.json
+```
+
+```js
+import manifest from '~/assets/anim/index.json';
+
+function clipFor(from, to) {
+  // label your cameras in Blender with vecbake_from / vecbake_to custom
+  // properties and this becomes an exact lookup
+  const clip = manifest.clips.find((c) => c.from === from && c.to === to);
+  if (clip) return { src: clip.file, reverse: false };
+
+  const back = manifest.clips.find((c) => c.from === to && c.to === from);
+  return back ? { src: back.file, reverse: true } : null;
+}
+```
+
+Baking with **All Cameras** writes `index.json` for you.
 
 ## Why it is small
 
@@ -150,7 +209,8 @@ anim.onend = () => el.showState('end');   // hand off to real, interactive DOM
 ## CLI
 
 ```bash
-npx ivg info anim/tower.svg     # elements, duration, size, what the states cost
+npx ivg info anim/tower.svg     # size, elements, samples, and which way it moves
+npx ivg manifest anim/          # index.json for a folder of clips
 npx ivg strip anim/tower.svg    # drop the embedded states -> smaller, no fallback
 npx ivg states anim/tower.svg   # extract the resting states as plain .svg
 ```
@@ -185,6 +245,21 @@ and edge chaining) rather than tuning the player — that is the lever with real
 leverage.
 
 ## Gotchas
+
+The four that bite hardest, in the order people hit them:
+
+1. **Do not guess playback direction from a filename.** Run `npx ivg info` or
+   read `doc.motion`. See [above](#choosing-a-clip-and-which-way-to-play-it).
+2. **Already have your own resting-state artwork?** Then the states embedded in
+   each file are dead weight — often half the payload. `npx ivg strip file.svg`
+   removes them.
+3. **`seam-fix` defaults on and roughly doubles frame cost** on fill-heavy
+   artwork. Turn it off unless you can see hairlines between abutting shapes.
+4. **A few sparse samples interpolate linearly.** If the bake used a large frame
+   step, a curved camera path visibly cuts corners between keys. `npx ivg info`
+   prints the sample count; single digits over half a second is coarse.
+
+### Everything else
 
 - **SVG optimisers strip `<metadata>`.** SVGO removes it by default, which
   deletes the animation and leaves a still image. Exclude these files, or set

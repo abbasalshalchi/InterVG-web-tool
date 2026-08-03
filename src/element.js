@@ -11,6 +11,14 @@
 
 import { IVGPlayer, fetchDocument } from './player.js';
 
+// `class X extends HTMLElement` is evaluated at import time, so on a server
+// (Nuxt, Next, SvelteKit, Astro — anything that renders on Node) merely
+// importing this module would throw `HTMLElement is not defined` before any
+// component ran. Extending a stand-in keeps the import side-effect free off the
+// browser; the element is only ever registered and instantiated by
+// defineElement(), which already no-ops without `customElements`.
+const ElementBase = typeof HTMLElement === 'undefined' ? class {} : HTMLElement;
+
 const TEMPLATE = `
   <style>
     :host { display: block; position: relative; contain: content; }
@@ -26,7 +34,7 @@ const TEMPLATE = `
   <canvas part="canvas"></canvas>
 `;
 
-export class IVGPlayerElement extends HTMLElement {
+export class IVGPlayerElement extends ElementBase {
   static get observedAttributes() {
     return ['src', 'autoplay', 'loop', 'speed', 'fit', 'background', 'seam-fix'];
   }

@@ -273,8 +273,12 @@ export class IVGPlayer {
 
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     const w = this.canvas.width / this.dpr, h = this.canvas.height / this.dpr;
+    // Always clear first. Painting the background over the previous frame is
+    // not enough: any colour with alpha -- including the literal 'transparent'
+    // -- composites as a no-op in source-over, so nothing gets erased and every
+    // frame smears on top of the last.
+    ctx.clearRect(0, 0, w, h);
     if (this.background) { ctx.fillStyle = this.background; ctx.fillRect(0, 0, w, h); }
-    else ctx.clearRect(0, 0, w, h);
     ctx.setTransform(this.scaleX * this.dpr, 0, 0, this.scaleY * this.dpr,
                      this.offX * this.dpr, this.offY * this.dpr);
     ctx.lineCap = 'round';
