@@ -11,11 +11,8 @@ That means no new file extension, no MIME configuration, no build plugin, and
 no broken image if JavaScript never runs.
 
 ```bash
-npm install ivg
+npm install intervg
 ```
-
-> The package name in `package.json` is a placeholder — check availability on
-> npm and rename before publishing.
 
 ---
 
@@ -24,7 +21,7 @@ npm install ivg
 ### Plain HTML
 
 ```html
-<script type="module" src="https://unpkg.com/ivg"></script>
+<script type="module" src="https://unpkg.com/intervg"></script>
 
 <ivg-player src="/anim/tower.svg" autoplay loop style="height:320px"></ivg-player>
 ```
@@ -36,7 +33,7 @@ Angular, Astro, plain HTML and React 19+.
 
 ```vue
 <script setup>
-import 'ivg';
+import 'intervg';
 </script>
 
 <template>
@@ -74,7 +71,7 @@ React 18 and earlier cannot set properties or listen for events on custom
 elements, so use the binding:
 
 ```jsx
-import { IVG } from 'ivg/react';
+import { IVG } from 'intervg/react';
 
 <IVG src="/anim/tower.svg" autoPlay loop onEnd={() => console.log('done')} />
 ```
@@ -82,7 +79,7 @@ import { IVG } from 'ivg/react';
 ### Any framework, imperative
 
 ```js
-import { load } from 'ivg';
+import { load } from 'intervg';
 
 const anim = await load('/anim/tower.svg', document.querySelector('#stage'));
 anim.play({ loop: true });
@@ -130,7 +127,9 @@ function clipFor(from, to) {
 }
 ```
 
-Baking with **All Cameras** writes `index.json` for you.
+VecBake writes `index.json` for you as soon as a folder holds more than one
+clip. A single clip gets none — the `.svg` is self-contained, so there is
+nothing to look up.
 
 ## Why it is small
 

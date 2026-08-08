@@ -5,11 +5,26 @@
   "type": "module",
   "license": "AGPL-3.0-or-later",
   "author": "Abbas Alshalchi <abbasalshalchi@gmail.com>",
-  "repository": { "type": "git", "url": "git+https://github.com/abbasalshalchi/InterVG-web-tool.git" },
-  "bugs": { "url": "https://github.com/abbasalshalchi/InterVG-web-tool/issues" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abbasalshalchi/InterVG-web-tool.git"
+  },
+  "bugs": {
+    "url": "https://github.com/abbasalshalchi/InterVG-web-tool/issues"
+  },
   "homepage": "https://github.com/abbasalshalchi/InterVG-web-tool#readme",
-  "keywords": ["svg", "animation", "vector", "canvas", "blender", "lottie-alternative", "ivg"],
-  "sideEffects": ["./src/index.js"],
+  "keywords": [
+    "svg",
+    "animation",
+    "vector",
+    "canvas",
+    "blender",
+    "lottie-alternative",
+    "ivg"
+  ],
+  "sideEffects": [
+    "./src/index.js"
+  ],
   "exports": {
     ".": "./src/index.js",
     "./react": "./src/react.js",
@@ -20,7 +35,12 @@
   "main": "./src/index.js",
   "module": "./src/index.js",
   "types": "./src/index.d.ts",
-  "files": ["src", "README.md", "LICENSE", "COMMERCIAL.md"],
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE",
+    "COMMERCIAL.md"
+  ],
   "bin": {
     "ivg": "./bin/ivg.js"
   },
@@ -28,12 +48,15 @@
     "react": ">=16.8"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": true }
+    "react": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=16"
   },
   "scripts": {
-    "test": "node bin/ivg.js info ../out/site.ivg"
+    "test": "node -e \"import('./src/index.js').then(m=>{for(const k of ['IVGPlayer','load','defineElement','fetchDocument','parseDocument'])if(!m[k])throw new Error('missing export: '+k);console.log('exports ok, ssr-safe')})\"",
+    "prepublishOnly": "npm test"
   }
 }

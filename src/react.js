@@ -9,7 +9,7 @@
  * drives the player directly against a canvas ref instead. No JSX here, so the
  * package needs no build step.
  *
- *   import { IVG } from 'ivg/react';
+ *   import { IVG } from 'intervg/react';
  *   <IVG src="/anim/tower.ivg" autoPlay loop />
  */
 

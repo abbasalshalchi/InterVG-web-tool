@@ -199,6 +199,9 @@ export class IVGPlayer {
         opacity: e.O ? new Track(e.O, 1, this.duration, samples) : null,
         depth: e.D ? new Track(e.D, 1, this.duration, samples) : null,
         shade: e.S ? new Track(e.S, 1, this.duration, samples) : null,
+        smooth: decodeSmooth(e.sm, e.n),
+        // fills always close; a stroke only when it chained into a ring
+        closed: e.k !== STROKE || e.cl === 1,
         offset,
         alpha: 0,
         css: null,
@@ -254,6 +257,49 @@ export class IVGPlayer {
     return el.css;
   }
 
+  /**
+   * Trace one element into the current path: straight through corners,
+   * Catmull-Rom cubics through smooth vertices. A corner carries a zero
+   * tangent, which collapses its cubic to exactly the straight segment it
+   * replaced -- so the two mix inside one path with no special case at the
+   * join, and an element with no mask costs nothing extra.
+   *
+   * The same formula lives in the add-on's curves.py and emit_svg.py. Change
+   * one and the animation stops matching its own resting states.
+   */
+  _trace(ctx, s, el, closed) {
+    const o = el.offset, n = el.npts, m = el.smooth;
+    ctx.moveTo(s[o], s[o + 1]);
+    if (!m) {
+      for (let p = 1; p < n; p++) ctx.lineTo(s[o + p * 2], s[o + p * 2 + 1]);
+      return;
+    }
+    let tix = 0, tiy = 0;
+    if (m[0] && closed) {
+      tix = (s[o + 2] - s[o + (n - 1) * 2]) * 0.5;
+      tiy = (s[o + 3] - s[o + (n - 1) * 2 + 1]) * 0.5;
+    }
+    const last = closed ? n : n - 1;
+    for (let i = 0; i < last; i++) {
+      const j = (i + 1) % n;
+      let tjx = 0, tjy = 0;
+      if (m[j] && (closed || (j > 0 && j < n - 1))) {
+        const a = closed ? (j - 1 + n) % n : j - 1;
+        const b = closed ? (j + 1) % n : j + 1;
+        tjx = (s[o + b * 2] - s[o + a * 2]) * 0.5;
+        tjy = (s[o + b * 2 + 1] - s[o + a * 2 + 1]) * 0.5;
+      }
+      const xj = s[o + j * 2], yj = s[o + j * 2 + 1];
+      if (tix === 0 && tiy === 0 && tjx === 0 && tjy === 0) {
+        ctx.lineTo(xj, yj);
+      } else {
+        const xi = s[o + i * 2], yi = s[o + i * 2 + 1];
+        ctx.bezierCurveTo(xi + tix / 3, yi + tiy / 3, xj - tjx / 3, yj - tjy / 3, xj, yj);
+      }
+      tix = tjx; tiy = tjy;
+    }
+  }
+
   render(t) {
     const started = performance.now();
     const ctx = this.ctx, els = this.elements, n = els.length;
@@ -299,9 +345,8 @@ export class IVGPlayer {
           const e2 = els[view[k]];
           if (e2.kind !== STROKE || e2.width !== width || e2.alpha !== alpha ||
               this._css(e2, 1) !== css) break;
-          const o = e2.offset;
-          ctx.moveTo(scratch[o], scratch[o + 1]);
-          for (let p = 1; p < e2.npts; p++) ctx.lineTo(scratch[o + p * 2], scratch[o + p * 2 + 1]);
+          this._trace(ctx, scratch, e2, e2.closed);
+          if (e2.closed) ctx.closePath();   // ends this subpath, not the batch
           k++;
         }
         ctx.globalAlpha = alpha;
@@ -314,9 +359,7 @@ export class IVGPlayer {
         ctx.globalAlpha = el.alpha;
         ctx.fillStyle = this._css(el, shade);
         ctx.beginPath();
-        const o = el.offset;
-        ctx.moveTo(scratch[o], scratch[o + 1]);
-        for (let p = 1; p < el.npts; p++) ctx.lineTo(scratch[o + p * 2], scratch[o + p * 2 + 1]);
+        this._trace(ctx, scratch, el, true);
         ctx.closePath();
         ctx.fill();
         if (this.seamFix) {
@@ -430,10 +473,11 @@ export class IVGPlayer {
     for (let i = view.length - 1; i >= 0; i--) {
       const el = this.elements[view[i]];
       ctx.beginPath();
-      const o = el.offset;
-      ctx.moveTo(scratch[o], scratch[o + 1]);
-      for (let p = 1; p < el.npts; p++) ctx.lineTo(scratch[o + p * 2], scratch[o + p * 2 + 1]);
+      // trace the curve, not the polyline, or hit testing drifts off the
+      // shape the viewer can actually see
+      this._trace(ctx, scratch, el, el.closed);
       if (el.kind === STROKE) {
+        if (el.closed) ctx.closePath();
         ctx.lineWidth = Math.max(el.width, slop);
         if (ctx.isPointInStroke(x, y)) return { id: el.id, group: el.group, index: view[i] };
       } else {
@@ -465,6 +509,24 @@ const DATA_ID = 'ivg-data';
  * same file renders as a picture and drives an animation. Both resting states
  * ride along inside it and are lifted back out here as standalone SVG strings.
  */
+/**
+ * Per-vertex smooth flags: 1 means every vertex, a hex string is a bitmask
+ * whose bit i is vertex i, anything else means none. Null for a plain
+ * polyline so the draw loop can skip the curve path entirely.
+ */
+function decodeSmooth(sm, n) {
+  if (sm === 1) { const m = new Uint8Array(n); m.fill(1); return m; }
+  if (typeof sm !== 'string' || !sm) return null;
+  const m = new Uint8Array(n);
+  const last = sm.length - 1;
+  for (let i = 0; i < n; i++) {
+    const ch = sm[last - (i >> 2)];              // last digit holds vertices 0-3
+    if (ch === undefined) break;
+    m[i] = (parseInt(ch, 16) >> (i & 3)) & 1;
+  }
+  return m;
+}
+
 export function parseDocument(text) {
   const trimmed = text.trimStart();
   if (trimmed[0] === '{') return JSON.parse(text);          // bare track JSON
