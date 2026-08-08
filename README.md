@@ -276,6 +276,43 @@ They come out of [VecBake](../README.md), a Blender add-on that bakes a 3D
 scene and camera move into 2D keyframes. All the 3D work — hidden-line removal,
 occlusion ordering — happens once at bake time; playback is 2D interpolation.
 
+## Releasing
+
+Publishing happens in CI, not from a laptop, because that is the only way to get
+**provenance** — a signed statement that this tarball was built from this repo at
+this commit, which npm verifies against a public transparency log and shows on the
+package page. It is signed with the runner's OIDC identity, and there is no such
+identity locally.
+
+One-time setup:
+
+1. On npmjs.com, create an **Automation** access token. Automation tokens are the
+   ones that work unattended; a token tied to 2FA will stall waiting for a code
+   that nothing can type. A granular token also works, but for a package that does
+   not exist yet it has to be scoped to *all* packages, since it cannot be scoped
+   to one that has never been published.
+2. In this repo: **Settings → Secrets and variables → Actions → New repository
+   secret**, named `NPM_TOKEN`.
+
+Then, per release:
+
+```bash
+npm version patch      # or minor / major — writes package.json and tags
+```
+
+```bash
+git push --follow-tags
+```
+
+Draft a GitHub release on that tag and publish it; [the workflow](.github/workflows/publish.yml)
+runs, refuses to continue if the tag and `package.json` disagree, and publishes.
+For a release with no tag — the first one, say — run the workflow by hand from the
+**Actions** tab instead.
+
+`prepublishOnly` imports the package on Node with no DOM before anything ships. It
+catches a broken export map and anything reaching for `HTMLElement` at module
+scope, which is the failure that breaks server rendering before a component runs.
+
 ## Licence
 
 **AGPL-3.0-or-later** — see [LICENSE](./LICENSE). Free to use in open-source

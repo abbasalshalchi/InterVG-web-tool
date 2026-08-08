@@ -1,0 +1,54 @@
+# Publish InterVG to npm, with provenance.
+#
+# Provenance is a signed statement of *where a tarball came from* -- this repo,
+# this commit, this workflow -- and npm verifies it against a public transparency
+# log before putting the "Provenance" panel on the package page. It is built from
+# the runner's OIDC identity, which is why publishing has to happen here and not
+# from a laptop: there is no identity to sign with locally.
+#
+# Needs a repository secret named NPM_TOKEN. See the README section on releasing.
+
+name: Publish
+
+on:
+  # Publish whatever is in package.json, on demand. Use this for the first release.
+  workflow_dispatch:
+  # Publish when a GitHub release is created, so the tag and the version agree.
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write        # the whole point: without this there is no provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20          # ships npm 10, which knows --provenance
+          registry-url: https://registry.npmjs.org
+
+      # No `npm ci`: the package has no dependencies and no lockfile. React is
+      # an optional peer, so there is nothing to install to run the checks.
+
+      - name: Check the package imports with no DOM
+        run: npm test
+
+      - name: Check the version matches the release tag
+        if: github.event_name == 'release'
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version=$(node -p "require('./package.json').version")
+          if [ "$tag" != "$version" ]; then
+            echo "release tag $tag does not match package.json $version" >&2
+            exit 1
+          fi
+
+      - name: Publish
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
