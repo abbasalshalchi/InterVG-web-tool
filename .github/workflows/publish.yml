@@ -1,17 +1,22 @@
-# Publish InterVG to npm, with provenance.
+# Publish InterVG to npm via trusted publishing.
 #
-# Provenance is a signed statement of *where a tarball came from* -- this repo,
-# this commit, this workflow -- and npm verifies it against a public transparency
-# log before putting the "Provenance" panel on the package page. It is built from
-# the runner's OIDC identity, which is why publishing has to happen here and not
-# from a laptop: there is no identity to sign with locally.
+# There is no token here, and there should never be one. npm trusts this repo and
+# this workflow file by name, and the runner proves it is them with a short-lived
+# OIDC token minted per run. Nothing long-lived exists to leak, expire or rotate.
 #
-# Needs a repository secret named NPM_TOKEN. See the README section on releasing.
+# Provenance -- the signed record of which repo and commit a tarball was built
+# from, checked against a public transparency log -- comes automatically on this
+# path, so `--provenance` is not passed. It would be redundant.
+#
+# One-time setup on npmjs.com, under the package's Settings -> Trusted Publisher:
+# repository `abbasalshalchi/InterVG-web-tool`, workflow `publish.yml`. That page
+# only exists once the package does, so the very first version has to be published
+# by hand; see the Releasing section of the README.
 
 name: Publish
 
 on:
-  # Publish whatever is in package.json, on demand. Use this for the first release.
+  # Publish whatever version is in package.json, on demand.
   workflow_dispatch:
   # Publish when a GitHub release is created, so the tag and the version agree.
   release:
@@ -19,7 +24,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write        # the whole point: without this there is no provenance
+  id-token: write        # the whole point: this is what npm verifies
 
 jobs:
   publish:
@@ -29,8 +34,14 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20          # ships npm 10, which knows --provenance
+          node-version: 24          # trusted publishing needs node >= 22.14
           registry-url: https://registry.npmjs.org
+
+      # Trusted publishing landed in npm 11.5.1. Pinning the floor explicitly
+      # rather than trusting whatever the runner image ships turns a confusing
+      # auth failure into something that cannot happen.
+      - name: Use an npm that can do trusted publishing
+        run: npm install -g npm@latest
 
       # No `npm ci`: the package has no dependencies and no lockfile. React is
       # an optional peer, so there is nothing to install to run the checks.
@@ -49,6 +60,4 @@ jobs:
           fi
 
       - name: Publish
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public

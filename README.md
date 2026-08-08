@@ -278,23 +278,38 @@ occlusion ordering — happens once at bake time; playback is 2D interpolation.
 
 ## Releasing
 
-Publishing happens in CI, not from a laptop, because that is the only way to get
-**provenance** — a signed statement that this tarball was built from this repo at
-this commit, which npm verifies against a public transparency log and shows on the
-package page. It is signed with the runner's OIDC identity, and there is no such
-identity locally.
+Publishing happens in CI, and there is **no npm token** — not in a secret, not
+anywhere. npm trusts this repository and [this workflow](.github/workflows/publish.yml)
+by name, and the runner proves it is them with a short-lived OIDC token minted for
+that one run. Nothing long-lived exists to leak, expire, or rotate.
 
-One-time setup:
+That is also where **provenance** comes from: the signed record of which repo and
+commit a tarball was built from, which npm checks against a public transparency
+log and shows on the package page. On this path it is automatic — `--provenance`
+is not passed, because it would be redundant.
 
-1. On npmjs.com, create an **Automation** access token. Automation tokens are the
-   ones that work unattended; a token tied to 2FA will stall waiting for a code
-   that nothing can type. A granular token also works, but for a package that does
-   not exist yet it has to be scoped to *all* packages, since it cannot be scoped
-   to one that has never been published.
-2. In this repo: **Settings → Secrets and variables → Actions → New repository
-   secret**, named `NPM_TOKEN`.
+One-time setup, on npmjs.com under the package's **Settings -> Trusted Publisher**:
 
-Then, per release:
+| | |
+|---|---|
+| Repository | `abbasalshalchi/InterVG-web-tool` |
+| Workflow filename | `publish.yml` |
+
+**The first version is the awkward one.** That settings page only exists once the
+package does, and `npm trust` says the same — *"the package you're configuring must
+already exist on the npm registry"*. npm has no equivalent of PyPI's pending
+publishers. So version one goes out by hand, with an interactive login and your
+normal 2FA, and every version after it comes from CI:
+
+```bash
+npm login
+```
+
+```bash
+npm publish --access public
+```
+
+Then configure the trusted publisher, and from then on:
 
 ```bash
 npm version patch      # or minor / major — writes package.json and tags
@@ -304,10 +319,14 @@ npm version patch      # or minor / major — writes package.json and tags
 git push --follow-tags
 ```
 
-Draft a GitHub release on that tag and publish it; [the workflow](.github/workflows/publish.yml)
-runs, refuses to continue if the tag and `package.json` disagree, and publishes.
-For a release with no tag — the first one, say — run the workflow by hand from the
-**Actions** tab instead.
+Draft a GitHub release on that tag and publish it. The workflow refuses to continue
+if the tag and `package.json` disagree, because a mislabelled version cannot be
+taken back. For a release with no tag, run the workflow by hand from the **Actions**
+tab instead.
+
+Do not create an access token with *Bypass two-factor authentication* for this. npm
+warns against it on the token page itself, and trusted publishing exists precisely
+so that nobody needs one.
 
 `prepublishOnly` imports the package on Node with no DOM before anything ships. It
 catches a broken export map and anything reaching for `HTMLElement` at module
