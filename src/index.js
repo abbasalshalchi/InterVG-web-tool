@@ -8,8 +8,6 @@
  * picture anywhere and animates wherever this player is loaded.
  */
 
-// provenance npm publish token expires on November 7, 2026
-
 export { IVGPlayer, fetchDocument, parseDocument } from './player.js';
 export { IVGPlayerElement, defineElement } from './element.js';
 
