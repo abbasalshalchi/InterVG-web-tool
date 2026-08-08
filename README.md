@@ -278,59 +278,17 @@ occlusion ordering — happens once at bake time; playback is 2D interpolation.
 
 ## Releasing
 
-Publishing happens in CI, and there is **no npm token** — not in a secret, not
-anywhere. npm trusts this repository and [this workflow](.github/workflows/publish.yml)
-by name, and the runner proves it is them with a short-lived OIDC token minted for
-that one run. Nothing long-lived exists to leak, expire, or rotate.
-
-That is also where **provenance** comes from: the signed record of which repo and
-commit a tarball was built from, which npm checks against a public transparency
-log and shows on the package page. On this path it is automatic — `--provenance`
-is not passed, because it would be redundant.
-
-One-time setup, on npmjs.com under the package's **Settings -> Trusted Publisher**:
-
-| | |
-|---|---|
-| Repository | `abbasalshalchi/InterVG-web-tool` |
-| Workflow filename | `publish.yml` |
-
-**The first version is the awkward one.** That settings page only exists once the
-package does, and `npm trust` says the same — *"the package you're configuring must
-already exist on the npm registry"*. npm has no equivalent of PyPI's pending
-publishers. So version one goes out by hand, with an interactive login and your
-normal 2FA, and every version after it comes from CI:
-
 ```bash
-npm login
-```
-
-```bash
-npm publish --access public
-```
-
-Then configure the trusted publisher, and from then on:
-
-```bash
-npm version patch      # or minor / major — writes package.json and tags
+npm version patch      # or minor / major
 ```
 
 ```bash
 git push --follow-tags
 ```
 
-Draft a GitHub release on that tag and publish it. The workflow refuses to continue
-if the tag and `package.json` disagree, because a mislabelled version cannot be
-taken back. For a release with no tag, run the workflow by hand from the **Actions**
-tab instead.
-
-Do not create an access token with *Bypass two-factor authentication* for this. npm
-warns against it on the token page itself, and trusted publishing exists precisely
-so that nobody needs one.
-
-`prepublishOnly` imports the package on Node with no DOM before anything ships. It
-catches a broken export map and anything reaching for `HTMLElement` at module
-scope, which is the failure that breaks server rendering before a component runs.
+Then draft a GitHub release on the new tag. [The workflow](.github/workflows/publish.yml)
+publishes it with provenance, using no token at all — npm trusts this repo over
+OIDC. Full steps, and the things that trip you up, in **[RELEASING.md](./RELEASING.md)**.
 
 ## Licence
 
