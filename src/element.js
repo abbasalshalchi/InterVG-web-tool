@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// InterVG -- Copyright (C) 2026 Abbas Alshalchi
+// Lerpa -- Copyright (C) 2026 Abbas Alshalchi
 // Also available under a commercial licence; see COMMERCIAL.md
 /**
- * <ivg-player> -- a custom element, so it works the same in Vue, Svelte,
+ * <lerpa-player> -- a custom element, so it works the same in Vue, Svelte,
  * Angular, plain HTML, and React 19+ without a framework-specific wrapper.
  *
- *   <ivg-player src="/anim/tower.ivg" autoplay loop></ivg-player>
+ *   <lerpa-player src="/anim/tower.lerpa" autoplay loop></lerpa-player>
  *
  * It renders the embedded resting state immediately, before the animation data
  * has even been parsed, so there is never an empty box while a file loads --
  * the container carries a real picture for exactly this reason.
  */
 
-import { IVGPlayer, fetchDocument } from './player.js';
+import { LerpaPlayer, fetchDocument } from './player.js';
 
 // `class X extends HTMLElement` is evaluated at import time, so on a server
 // (Nuxt, Next, SvelteKit, Astro — anything that renders on Node) merely
@@ -37,7 +37,7 @@ const TEMPLATE = `
   <canvas part="canvas"></canvas>
 `;
 
-export class IVGPlayerElement extends ElementBase {
+export class LerpaPlayerElement extends ElementBase {
   static get observedAttributes() {
     return ['src', 'autoplay', 'loop', 'speed', 'fit', 'background', 'seam-fix'];
   }
@@ -86,7 +86,7 @@ export class IVGPlayerElement extends ElementBase {
       if (doc.states && doc.states.start) this._stateHost.innerHTML = doc.states.start;
 
       if (this.player) this.player.destroy();
-      this.player = new IVGPlayer(this._canvas, doc, {
+      this.player = new LerpaPlayer(this._canvas, doc, {
         fit: this.getAttribute('fit') || 'contain',
         speed: parseFloat(this.getAttribute('speed')) || 1,
         background: this.getAttribute('background') || null,
@@ -135,9 +135,9 @@ export class IVGPlayerElement extends ElementBase {
 
 let defined = false;
 
-/** Register <ivg-player>. Safe to call repeatedly. */
-export function defineElement(tag = 'ivg-player') {
+/** Register <lerpa-player>. Safe to call repeatedly. */
+export function defineElement(tag = 'lerpa-player') {
   if (defined || typeof customElements === 'undefined') return;
-  if (!customElements.get(tag)) customElements.define(tag, IVGPlayerElement);
+  if (!customElements.get(tag)) customElements.define(tag, LerpaPlayerElement);
   defined = true;
 }

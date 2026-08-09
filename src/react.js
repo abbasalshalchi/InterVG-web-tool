@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// InterVG -- Copyright (C) 2026 Abbas Alshalchi
+// Lerpa -- Copyright (C) 2026 Abbas Alshalchi
 // Also available under a commercial licence; see COMMERCIAL.md
 /**
  * React binding.
@@ -9,14 +9,14 @@
  * drives the player directly against a canvas ref instead. No JSX here, so the
  * package needs no build step.
  *
- *   import { IVG } from 'intervg/react';
- *   <IVG src="/anim/tower.ivg" autoPlay loop />
+ *   import { Lerpa } from 'lerpa/react';
+ *   <Lerpa src="/anim/tower.lerpa" autoPlay loop />
  */
 
 import { createElement, useEffect, useImperativeHandle, useRef, forwardRef } from 'react';
-import { IVGPlayer, fetchDocument } from './player.js';
+import { LerpaPlayer, fetchDocument } from './player.js';
 
-export const IVG = forwardRef(function IVG(props, ref) {
+export const Lerpa = forwardRef(function Lerpa(props, ref) {
   const {
     src, autoPlay = false, loop = false, speed = 1, fit = 'contain',
     background = null, onLoad, onEnd, onError, style, className, ...rest
@@ -35,7 +35,7 @@ export const IVG = forwardRef(function IVG(props, ref) {
       try {
         const doc = typeof src === 'string' ? await fetchDocument(src) : src;
         if (cancelled || !canvasRef.current) return;
-        player = new IVGPlayer(canvasRef.current, doc, {
+        player = new LerpaPlayer(canvasRef.current, doc, {
           fit, speed, background,
           onend: () => handlers.current.onEnd && handlers.current.onEnd(),
         });
@@ -86,4 +86,4 @@ export const IVG = forwardRef(function IVG(props, ref) {
   });
 });
 
-export default IVG;
+export default Lerpa;

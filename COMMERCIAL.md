@@ -1,6 +1,6 @@
 # Commercial licence
 
-InterVG is released under the **GNU Affero General Public License v3.0 or later**
+Lerpa is released under the **GNU Affero General Public License v3.0 or later**
 (see [LICENSE](./LICENSE)). That licence is a good fit for open-source projects,
 personal work and evaluation.
 
@@ -10,7 +10,7 @@ complete corresponding source of your version — which for most commercial
 products means publishing code you would rather keep private.
 
 A commercial licence removes that condition. It grants the right to use, modify
-and distribute InterVG inside a proprietary application without any obligation
+and distribute Lerpa inside a proprietary application without any obligation
 to release your own source.
 
 | | |
@@ -25,13 +25,13 @@ To buy one, or to ask whether you need one: **abbasalshalchi@gmail.com**
 
 You do **not** need a commercial licence to:
 
-- evaluate InterVG, or use it in internal tooling you never distribute;
+- evaluate Lerpa, or use it in internal tooling you never distribute;
 - use it in a project that is itself licensed under the AGPL;
 - use `.svg` files produced by the Blender add-on. **The output is yours.**
   Baked artwork carries no licence obligation from this project at all — only
   the runtime does.
 
-You **do** need one to ship the InterVG runtime as part of a product whose
+You **do** need one to ship the Lerpa runtime as part of a product whose
 source you do not publish.
 
 ## Why it is licensed this way

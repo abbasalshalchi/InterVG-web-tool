@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// InterVG -- Copyright (C) 2026 Abbas Alshalchi
+// Lerpa -- Copyright (C) 2026 Abbas Alshalchi
 // Also available under a commercial licence; see COMMERCIAL.md
 /**
- * IVG player -- Canvas 2D renderer for .ivg vector animations.
+ * Lerpa player -- Canvas 2D renderer for .lerpa vector animations.
  *
  * Per frame: interpolate sparse 2D keyframes, painter-sort by a baked order
  * value, draw. No projection, no camera, no z-buffer -- all of that happened
@@ -138,15 +138,15 @@ class Track {
   }
 }
 
-export class IVGPlayer {
+export class LerpaPlayer {
   /**
    * @param {HTMLCanvasElement} canvas
-   * @param {object} doc parsed .ivg (or bare vecbake) document
+   * @param {object} doc parsed .lerpa (or bare vecbake) document
    * @param {object} [options]
    */
   constructor(canvas, doc, options = {}) {
-    if (!doc || (doc.format !== 'ivg' && doc.format !== 'vecbake')) {
-      throw new Error('IVG: not an .ivg document');
+    if (!doc || (doc.format !== 'lerpa' && doc.format !== 'vecbake')) {
+      throw new Error('Lerpa: not an .lerpa document');
     }
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
@@ -503,12 +503,12 @@ export class IVGPlayer {
   }
 }
 
-const DATA_ID = 'ivg-data';
+const DATA_ID = 'lerpa-data';
 
 /**
- * Parse an .ivg container, or a bare track JSON.
+ * Parse an .lerpa container, or a bare track JSON.
  *
- * An .ivg is a valid SVG carrying its animation in a <metadata> block, so the
+ * An .lerpa is a valid SVG carrying its animation in a <metadata> block, so the
  * same file renders as a picture and drives an animation. Both resting states
  * ride along inside it and are lifted back out here as standalone SVG strings.
  */
@@ -533,36 +533,36 @@ function decodeSmooth(sm, n) {
 export function parseDocument(text) {
   const trimmed = text.trimStart();
   if (trimmed[0] === '{') return JSON.parse(text);          // bare track JSON
-  if (trimmed[0] !== '<') throw new Error('IVG: unrecognised file');
+  if (trimmed[0] !== '<') throw new Error('Lerpa: unrecognised file');
 
   let doc, states = null;
   if (typeof DOMParser !== 'undefined') {
     const xml = new DOMParser().parseFromString(text, 'image/svg+xml');
     const node = xml.getElementById(DATA_ID);
-    if (!node) throw new Error('IVG: SVG has no embedded animation data');
+    if (!node) throw new Error('Lerpa: SVG has no embedded animation data');
     doc = JSON.parse(node.textContent);
     const root = xml.documentElement;
     const header = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${root.getAttribute('viewBox')}"`
       + ` width="${root.getAttribute('width')}" height="${root.getAttribute('height')}">`;
     states = {};
     for (const which of ['start', 'end']) {
-      const g = xml.getElementById(`ivg-state-${which}`);
+      const g = xml.getElementById(`lerpa-state-${which}`);
       if (g) states[which] = `${header}${g.innerHTML}</svg>`;
     }
   } else {
     // no DOM (Node, a build step): pull the payload out textually
-    const m = text.match(/<metadata[^>]*id="ivg-data"[^>]*>([\s\S]*?)<\/metadata>/);
-    if (!m) throw new Error('IVG: SVG has no embedded animation data');
+    const m = text.match(/<metadata[^>]*id="lerpa-data"[^>]*>([\s\S]*?)<\/metadata>/);
+    if (!m) throw new Error('Lerpa: SVG has no embedded animation data');
     doc = JSON.parse(m[1].replace(/<!\[CDATA\[/g, '').replace(/\]\]>/g, ''));
   }
   if (states) doc.states = states;
   return doc;
 }
 
-/** Fetch and parse an .ivg document. */
+/** Fetch and parse an .lerpa document. */
 export async function fetchDocument(src, init) {
   const res = await fetch(src, init);
-  if (!res.ok) throw new Error(`IVG: ${res.status} ${res.statusText} loading ${src}`);
+  if (!res.ok) throw new Error(`Lerpa: ${res.status} ${res.statusText} loading ${src}`);
   // read as text, not res.json(): a static host will usually guess the wrong
   // MIME type for this extension, and the container is XML anyway
   return parseDocument(await res.text());

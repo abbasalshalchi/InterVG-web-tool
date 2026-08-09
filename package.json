@@ -1,18 +1,18 @@
 {
-  "name": "intervg",
-  "version": "0.1.3",
-  "description": "Interactive vector animations for the web. An .ivg is a valid SVG that also animates.",
+  "name": "lerpa",
+  "version": "0.2.0",
+  "description": "Interactive vector animations for the web. A .lerpa is a valid SVG that also animates.",
   "type": "module",
   "license": "AGPL-3.0-or-later",
   "author": "Abbas Alshalchi <abbasalshalchi@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/abbasalshalchi/InterVG-web-tool.git"
+    "url": "git+https://github.com/abbasalshalchi/lerpa.git"
   },
   "bugs": {
-    "url": "https://github.com/abbasalshalchi/InterVG-web-tool/issues"
+    "url": "https://github.com/abbasalshalchi/lerpa/issues"
   },
-  "homepage": "https://github.com/abbasalshalchi/InterVG-web-tool#readme",
+  "homepage": "https://github.com/abbasalshalchi/lerpa#readme",
   "keywords": [
     "svg",
     "animation",
@@ -20,7 +20,7 @@
     "canvas",
     "blender",
     "lottie-alternative",
-    "ivg"
+    "lerpa"
   ],
   "sideEffects": [
     "./src/index.js"
@@ -42,7 +42,7 @@
     "COMMERCIAL.md"
   ],
   "bin": {
-    "ivg": "./bin/ivg.js"
+    "lerpa": "./bin/lerpa.js"
   },
   "peerDependencies": {
     "react": ">=16.8"
@@ -56,7 +56,7 @@
     "node": ">=16"
   },
   "scripts": {
-    "test": "node -e \"import('./src/index.js').then(m=>{for(const k of ['IVGPlayer','load','defineElement','fetchDocument','parseDocument'])if(!m[k])throw new Error('missing export: '+k);console.log('exports ok, ssr-safe')})\"",
+    "test": "node -e \"import('./src/index.js').then(m=>{for(const k of ['LerpaPlayer','load','defineElement','fetchDocument','parseDocument'])if(!m[k])throw new Error('missing export: '+k);console.log('exports ok, ssr-safe')})\"",
     "prepublishOnly": "npm test"
   }
 }

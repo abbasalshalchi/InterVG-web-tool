@@ -43,7 +43,7 @@ Choose a tag** → pick the `v0.1.3` you just pushed → **Publish release**.
 
 **4. Watch it.** The **Actions** tab shows the run. It takes about a minute.
 
-Then check [npmjs.com/package/intervg](https://www.npmjs.com/package/intervg):
+Then check [npmjs.com/package/lerpa](https://www.npmjs.com/package/lerpa):
 the new version is listed, and hovering the green tick next to it says *Built and
 signed with provenance*.
 
@@ -103,7 +103,7 @@ On npmjs.com, under the package's **Settings → Trusted Publisher**:
 
 | field | value |
 |---|---|
-| Repository | `abbasalshalchi/InterVG-web-tool` |
+| Repository | `abbasalshalchi/lerpa` |
 | Workflow filename | `publish.yml` |
 | Environment name | *(blank)* |
 | Allowed actions | `Allow npm publish` only |

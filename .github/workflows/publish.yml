@@ -1,4 +1,4 @@
-# Publish InterVG to npm via trusted publishing.
+# Publish Lerpa to npm via trusted publishing.
 #
 # There is no token here, and there should never be one. npm trusts this repo and
 # this workflow file by name, and the runner proves it is them with a short-lived
@@ -9,7 +9,7 @@
 # path, so `--provenance` is not passed. It would be redundant.
 #
 # One-time setup on npmjs.com, under the package's Settings -> Trusted Publisher:
-# repository `abbasalshalchi/InterVG-web-tool`, workflow `publish.yml`. That page
+# repository `abbasalshalchi/lerpa`, workflow `publish.yml`. That page
 # only exists once the package does, so the very first version has to be published
 # by hand; see the Releasing section of the README.
 

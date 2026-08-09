@@ -1,25 +1,25 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// InterVG -- Copyright (C) 2026 Abbas Alshalchi
+// Lerpa -- Copyright (C) 2026 Abbas Alshalchi
 // Also available under a commercial licence; see COMMERCIAL.md
 /**
- * ivg -- inspect and repack animated IVG .svg files.
+ * lerpa -- inspect and repack animated Lerpa .svg files.
  *
- *   npx ivg info anim/tower.svg     what is in this file, and what it costs
- *   npx ivg strip anim/tower.svg    drop the resting states (smaller, no fallback)
- *   npx ivg states anim/tower.svg   write the resting states out as plain .svg
+ *   npx lerpa info anim/tower.svg     what is in this file, and what it costs
+ *   npx lerpa strip anim/tower.svg    drop the resting states (smaller, no fallback)
+ *   npx lerpa states anim/tower.svg   write the resting states out as plain .svg
  */
 
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
-const DATA_RE = /<metadata[^>]*id="ivg-data"[^>]*>([\s\S]*?)<\/metadata>/;
+const DATA_RE = /<metadata[^>]*id="lerpa-data"[^>]*>([\s\S]*?)<\/metadata>/;
 
 function read(file) {
   const text = readFileSync(file, 'utf8');
   const m = text.match(DATA_RE);
-  if (!m) throw new Error(`${file}: no embedded IVG data (a plain SVG, not an animated one?)`);
+  if (!m) throw new Error(`${file}: no embedded Lerpa data (a plain SVG, not an animated one?)`);
   const json = JSON.parse(m[1].replace(/<!\[CDATA\[/g, '').replace(/\]\]>/g, ''));
   return { text, json };
 }
@@ -56,7 +56,7 @@ function info(file) {
 
 function strip(file) {
   const { text } = read(file);
-  const out = text.replace(/<g id="ivg-state-end"[\s\S]*?<\/g>\s*(?=<\/svg>)/, '');
+  const out = text.replace(/<g id="lerpa-state-end"[\s\S]*?<\/g>\s*(?=<\/svg>)/, '');
   const target = join(dirname(file), basename(file).replace(/\.svg$/, '') + '.min.svg');
   if (target === file) throw new Error('refusing to overwrite the source file');
   writeFileSync(target, out);
@@ -68,7 +68,7 @@ function states(file) {
   const header = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${json.w} ${json.h}"`
     + ` width="${json.w}" height="${json.h}">`;
   for (const which of ['start', 'end']) {
-    const m = text.match(new RegExp(`<g id="ivg-state-${which}"[^>]*>([\\s\\S]*?)</g>\\s*(?=<g id="ivg-state-|</svg>)`));
+    const m = text.match(new RegExp(`<g id="lerpa-state-${which}"[^>]*>([\\s\\S]*?)</g>\\s*(?=<g id="lerpa-state-|</svg>)`));
     if (!m) continue;
     const target = join(dirname(file), basename(file).replace(/\.svg$/, '') + `.${which}.svg`);
     writeFileSync(target, `${header}${m[1]}</svg>`);
@@ -148,7 +148,7 @@ function manifest(dir) {
     process.exit(1);
   }
   const target = join(dir, 'index.json');
-  writeFileSync(target, JSON.stringify({ format: 'ivg-manifest', version: 1, clips }, null, 1));
+  writeFileSync(target, JSON.stringify({ format: 'lerpa-manifest', version: 1, clips }, null, 1));
   console.log(`${target}  (${clips.length} clips)`);
   for (const c of clips) {
     console.log(`  ${c.file.padEnd(28)} moves ${c.motion.direction.padEnd(4)} x${c.motion.scale}`);
@@ -158,8 +158,8 @@ function manifest(dir) {
 const [command, file] = process.argv.slice(2);
 const commands = { info, strip, states, manifest };
 if (!command || !file || !commands[command]) {
-  console.error('usage: ivg <info|strip|states> <file.svg>');
-  console.error('       ivg manifest <folder>');
+  console.error('usage: lerpa <info|strip|states> <file.svg>');
+  console.error('       lerpa manifest <folder>');
   process.exit(1);
 }
 try {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>IVG — vanilla example</title>
+<title>Lerpa — vanilla example</title>
 <style>
   body { margin: 0; padding: 24px; font: 14px/1.5 system-ui, sans-serif;
          background: #fff; color: #14161a; }
@@ -14,7 +14,7 @@
        color: #666; margin: 0 0 8px; }
   .frame { border: 1px solid #e2e5ea; border-radius: 10px; overflow: hidden;
            height: 320px; background: #fff; }
-  ivg-player { height: 100%; }
+  lerpa-player { height: 100%; }
   img.raw { width: 100%; height: 100%; object-fit: contain; display: block; }
   .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   button { font: inherit; padding: 6px 12px; border: 1px solid #d7dbe0;
@@ -26,7 +26,7 @@
 </head>
 <body>
 
-<h1>IVG — one file, three ways to use it</h1>
+<h1>Lerpa — one file, three ways to use it</h1>
 <p class="lead">All three panels below load the same <code>site.svg</code>.</p>
 
 <section>
@@ -37,9 +37,9 @@
 
 <section>
   <h2>2 · The element — works in any framework</h2>
-  <p><code>&lt;ivg-player src="site.ivg" autoplay loop&gt;&lt;/ivg-player&gt;</code></p>
+  <p><code>&lt;lerpa-player src="site.lerpa" autoplay loop&gt;&lt;/lerpa-player&gt;</code></p>
   <div class="frame">
-    <ivg-player id="a" src="../../out/site.svg" autoplay loop></ivg-player>
+    <lerpa-player id="a" src="../../out/site.svg" autoplay loop></lerpa-player>
   </div>
   <div class="row">
     <button onclick="a.play()">Play</button>

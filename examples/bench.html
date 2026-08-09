@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>IVG bench</title></head>
+<head><meta charset="utf-8"><title>Lerpa bench</title></head>
 <body>
 <pre id="out">running…</pre>
 <script type="module">
-import { IVGPlayer, fetchDocument } from '../src/player.js';
+import { LerpaPlayer, fetchDocument } from '../src/player.js';
 
 const src = new URLSearchParams(location.search).get('src') || '../../out/site.svg';
 const doc = await fetchDocument(src);
@@ -13,7 +13,7 @@ function bench(label, opts) {
   const c = document.createElement('canvas');
   c.style.cssText = 'width:960px;height:540px;position:fixed;left:-9999px';
   document.body.appendChild(c);
-  const p = new IVGPlayer(c, doc, { autoResize: false, background: '#fff', ...opts });
+  const p = new LerpaPlayer(c, doc, { autoResize: false, background: '#fff', ...opts });
   p.dpr = 1; p.canvas.width = 960; p.canvas.height = 540;
   p.scaleX = p.scaleY = Math.min(960 / doc.w, 540 / doc.h);
   p.offX = p.offY = 0;

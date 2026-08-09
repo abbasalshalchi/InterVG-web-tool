@@ -1,8 +1,8 @@
-# IVG
+# Lerpa
 
 **Interactive vector animations that are just SVG files.**
 
-An IVG file is a real `.svg`. Open it, drop it in an `<img>`, put it in Figma —
+A Lerpa file is a real `.svg`. Open it, drop it in an `<img>`, put it in Figma —
 it renders, because it is a normal SVG showing the resting state. Load this
 player and the same file becomes an animation, because the keyframes ride along
 inside it in a `<metadata>` block.
@@ -11,7 +11,7 @@ That means no new file extension, no MIME configuration, no build plugin, and
 no broken image if JavaScript never runs.
 
 ```bash
-npm install intervg
+npm install lerpa
 ```
 
 ---
@@ -21,23 +21,23 @@ npm install intervg
 ### Plain HTML
 
 ```html
-<script type="module" src="https://unpkg.com/intervg"></script>
+<script type="module" src="https://unpkg.com/lerpa"></script>
 
-<ivg-player src="/anim/tower.svg" autoplay loop style="height:320px"></ivg-player>
+<lerpa-player src="/anim/tower.svg" autoplay loop style="height:320px"></lerpa-player>
 ```
 
-`<ivg-player>` is a custom element, so it behaves identically in Vue, Svelte,
+`<lerpa-player>` is a custom element, so it behaves identically in Vue, Svelte,
 Angular, Astro, plain HTML and React 19+.
 
 ### Vue
 
 ```vue
 <script setup>
-import 'intervg';
+import 'lerpa';
 </script>
 
 <template>
-  <ivg-player src="/anim/tower.svg" autoplay loop />
+  <lerpa-player src="/anim/tower.svg" autoplay loop />
 </template>
 ```
 
@@ -45,7 +45,7 @@ Vue warns about unknown elements unless you tell it this one is custom:
 
 ```js
 // vite.config.js
-vue({ template: { compilerOptions: { isCustomElement: (tag) => tag === 'ivg-player' } } })
+vue({ template: { compilerOptions: { isCustomElement: (tag) => tag === 'lerpa-player' } } })
 ```
 
 ### Nuxt
@@ -53,7 +53,7 @@ vue({ template: { compilerOptions: { isCustomElement: (tag) => tag === 'ivg-play
 ```ts
 // nuxt.config.ts
 export default defineNuxtConfig({
-  vue: { template: { compilerOptions: { isCustomElement: (tag) => tag === 'ivg-player' } } },
+  vue: { template: { compilerOptions: { isCustomElement: (tag) => tag === 'lerpa-player' } } },
 })
 ```
 
@@ -71,15 +71,15 @@ React 18 and earlier cannot set properties or listen for events on custom
 elements, so use the binding:
 
 ```jsx
-import { IVG } from 'intervg/react';
+import { Lerpa } from 'lerpa/react';
 
-<IVG src="/anim/tower.svg" autoPlay loop onEnd={() => console.log('done')} />
+<Lerpa src="/anim/tower.svg" autoPlay loop onEnd={() => console.log('done')} />
 ```
 
 ### Any framework, imperative
 
 ```js
-import { load } from 'intervg';
+import { load } from 'lerpa';
 
 const anim = await load('/anim/tower.svg', document.querySelector('#stage'));
 anim.play({ loop: true });
@@ -95,7 +95,7 @@ transition that runs backwards — which reads as broken artwork rather than
 broken wiring. Do not infer it from the name. Ask:
 
 ```bash
-npx ivg info anim/tower.bts_cam.svg
+npx lerpa info anim/tower.bts_cam.svg
 #   motion     moves OUT, x0.42 — play() goes close -> wide, reverse() goes wide -> close
 ```
 
@@ -110,7 +110,7 @@ For a set of clips, generate an index once and drive your UI from it instead of
 from a hand-written filename map:
 
 ```bash
-npx ivg manifest anim/          # writes anim/index.json
+npx lerpa manifest anim/          # writes anim/index.json
 ```
 
 ```js
@@ -153,7 +153,7 @@ Three decisions keep it there:
 
 ## API
 
-### `<ivg-player>`
+### `<lerpa-player>`
 
 | attribute | |
 |---|---|
@@ -169,7 +169,7 @@ Methods: `play()`, `reverse()`, `pause()`, `seek(t)`, `showState('end')`,
 `showAnimation()`, `setGroupColor(group, css)`, `pick(x, y)`.
 Events: `load`, `end`, `error`.
 
-### `load(src, target, options) → Promise<IVGPlayer>`
+### `load(src, target, options) → Promise<LerpaPlayer>`
 
 `target` may be a `<canvas>` or any element to render inside.
 
@@ -208,10 +208,10 @@ anim.onend = () => el.showState('end');   // hand off to real, interactive DOM
 ## CLI
 
 ```bash
-npx ivg info anim/tower.svg     # size, elements, samples, and which way it moves
-npx ivg manifest anim/          # index.json for a folder of clips
-npx ivg strip anim/tower.svg    # drop the embedded states -> smaller, no fallback
-npx ivg states anim/tower.svg   # extract the resting states as plain .svg
+npx lerpa info anim/tower.svg     # size, elements, samples, and which way it moves
+npx lerpa manifest anim/          # index.json for a folder of clips
+npx lerpa strip anim/tower.svg    # drop the embedded states -> smaller, no fallback
+npx lerpa states anim/tower.svg   # extract the resting states as plain .svg
 ```
 
 ---
@@ -236,7 +236,7 @@ subdivided surfaces — floors, walls, ground planes — you will not see those
 hairlines and should turn it off:
 
 ```html
-<ivg-player src="/anim/tower.svg" seam-fix="false"></ivg-player>
+<lerpa-player src="/anim/tower.svg" seam-fix="false"></lerpa-player>
 ```
 
 If frames are still tight, cut element count at bake time (sharp-edge filtering
@@ -247,15 +247,15 @@ leverage.
 
 The four that bite hardest, in the order people hit them:
 
-1. **Do not guess playback direction from a filename.** Run `npx ivg info` or
+1. **Do not guess playback direction from a filename.** Run `npx lerpa info` or
    read `doc.motion`. See [above](#choosing-a-clip-and-which-way-to-play-it).
 2. **Already have your own resting-state artwork?** Then the states embedded in
-   each file are dead weight — often half the payload. `npx ivg strip file.svg`
+   each file are dead weight — often half the payload. `npx lerpa strip file.svg`
    removes them.
 3. **`seam-fix` defaults on and roughly doubles frame cost** on fill-heavy
    artwork. Turn it off unless you can see hairlines between abutting shapes.
 4. **A few sparse samples interpolate linearly.** If the bake used a large frame
-   step, a curved camera path visibly cuts corners between keys. `npx ivg info`
+   step, a curved camera path visibly cuts corners between keys. `npx lerpa info`
    prints the sample count; single digits over half a second is coarse.
 
 ### Everything else
