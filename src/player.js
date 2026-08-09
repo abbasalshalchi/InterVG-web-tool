@@ -362,7 +362,10 @@ export class IVGPlayer {
         this._trace(ctx, scratch, el, true);
         ctx.closePath();
         ctx.fill();
-        if (this.seamFix) {
+        // Not on a translucent fill: globalAlpha applies per draw call, so a
+        // stroke over its own fill blends twice along the boundary and rings
+        // the shape in a darker outline. emit_svg.py skips it too, to match.
+        if (this.seamFix && el.alpha > 0.999) {
           // abutting polygons leave an antialiased hairline in every 2D
           // rasteriser; stroking each fill with its own colour closes it
           ctx.strokeStyle = ctx.fillStyle;
