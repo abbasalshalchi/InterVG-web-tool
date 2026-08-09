@@ -11,7 +11,7 @@ That means no new file extension, no MIME configuration, no build plugin, and
 no broken image if JavaScript never runs.
 
 ```bash
-npm install lerpa
+npm install lerpa-player
 ```
 
 ---
@@ -21,7 +21,7 @@ npm install lerpa
 ### Plain HTML
 
 ```html
-<script type="module" src="https://unpkg.com/lerpa"></script>
+<script type="module" src="https://unpkg.com/lerpa-player"></script>
 
 <lerpa-player src="/anim/tower.svg" autoplay loop style="height:320px"></lerpa-player>
 ```
@@ -33,7 +33,7 @@ Angular, Astro, plain HTML and React 19+.
 
 ```vue
 <script setup>
-import 'lerpa';
+import 'lerpa-player';
 </script>
 
 <template>
@@ -71,7 +71,7 @@ React 18 and earlier cannot set properties or listen for events on custom
 elements, so use the binding:
 
 ```jsx
-import { Lerpa } from 'lerpa/react';
+import { Lerpa } from 'lerpa-player/react';
 
 <Lerpa src="/anim/tower.svg" autoPlay loop onEnd={() => console.log('done')} />
 ```
@@ -79,7 +79,7 @@ import { Lerpa } from 'lerpa/react';
 ### Any framework, imperative
 
 ```js
-import { load } from 'lerpa';
+import { load } from 'lerpa-player';
 
 const anim = await load('/anim/tower.svg', document.querySelector('#stage'));
 anim.play({ loop: true });
@@ -212,6 +212,14 @@ npx lerpa info anim/tower.svg     # size, elements, samples, and which way it mo
 npx lerpa manifest anim/          # index.json for a folder of clips
 npx lerpa strip anim/tower.svg    # drop the embedded states -> smaller, no fallback
 npx lerpa states anim/tower.svg   # extract the resting states as plain .svg
+```
+
+The command is `lerpa` once the package is installed. Without a local install
+`npx` resolves by *package* name, not command name, so it cannot find `lerpa`
+on its own — name the package explicitly for a one-off:
+
+```bash
+npx -p lerpa-player lerpa info anim/tower.svg
 ```
 
 ---

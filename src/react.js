@@ -9,7 +9,7 @@
  * drives the player directly against a canvas ref instead. No JSX here, so the
  * package needs no build step.
  *
- *   import { Lerpa } from 'lerpa/react';
+ *   import { Lerpa } from 'lerpa-player/react';
  *   <Lerpa src="/anim/tower.lerpa" autoPlay loop />
  */
 

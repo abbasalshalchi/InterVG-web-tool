@@ -1,5 +1,5 @@
 {
-  "name": "lerpa",
+  "name": "lerpa-player",
   "version": "0.2.0",
   "description": "Interactive vector animations for the web. A .lerpa is a valid SVG that also animates.",
   "type": "module",
@@ -42,7 +42,7 @@
     "COMMERCIAL.md"
   ],
   "bin": {
-    "lerpa": "./bin/lerpa.js"
+    "lerpa": "bin/lerpa.js"
   },
   "peerDependencies": {
     "react": ">=16.8"

@@ -43,7 +43,7 @@ Choose a tag** → pick the `v0.1.3` you just pushed → **Publish release**.
 
 **4. Watch it.** The **Actions** tab shows the run. It takes about a minute.
 
-Then check [npmjs.com/package/lerpa](https://www.npmjs.com/package/lerpa):
+Then check [npmjs.com/package/lerpa-player](https://www.npmjs.com/package/lerpa-player):
 the new version is listed, and hovering the green tick next to it says *Built and
 signed with provenance*.
 
@@ -112,8 +112,8 @@ On npmjs.com, under the package's **Settings → Trusted Publisher**:
 `npm login` and `npm publish`. That settings page only exists once the package
 does, and `npm trust` says the same — *"the package you're configuring must
 already exist on the npm registry"*. npm has no equivalent of PyPI's pending
-publishers. That is why `0.1.0` carries no provenance and everything from
-`0.1.2` onwards does.
+publishers. That is why `lerpa-player@0.2.0`, the first release under this name,
+carries no provenance, and everything from `0.2.1` onwards does.
 
 Do **not** create an access token with *Bypass two-factor authentication* for
 CI. npm warns against it on the token page itself, and trusted publishing exists
