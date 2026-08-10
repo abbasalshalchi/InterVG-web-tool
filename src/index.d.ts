@@ -55,10 +55,27 @@ export interface LerpaHit {
   index: number;
 }
 
-export declare class LerpaPlayer {
-  constructor(canvas: HTMLCanvasElement, doc: LerpaDocument, options?: LerpaPlayerOptions);
+/** Placement for `drawInto`, applied on top of the context's own transform. */
+export interface LerpaTransform {
+  x?: number;
+  y?: number;
+  /** Radians, clockwise, about the anchor. */
+  rotation?: number;
+  scale?: number;
+  scaleX?: number;
+  scaleY?: number;
+  /** Default `'center'`. */
+  anchor?: 'center' | 'topleft';
+}
 
-  readonly canvas: HTMLCanvasElement;
+export declare class LerpaPlayer {
+  /**
+   * Pass `null` for a *detached* player: no canvas of its own, drawn only
+   * through `drawInto`. That is how many instances share one surface.
+   */
+  constructor(canvas: HTMLCanvasElement | null, doc: LerpaDocument, options?: LerpaPlayerOptions);
+
+  readonly canvas: HTMLCanvasElement | null;
   readonly width: number;
   readonly height: number;
   /** Seconds. */
@@ -82,8 +99,13 @@ export declare class LerpaPlayer {
   pause(): this;
   /** Jump to a time in seconds and paint it. */
   seek(t: number): this;
-  /** Paint one frame without touching playback state. */
+  /** Paint one frame without touching playback state. No-op when detached. */
   render(t: number): void;
+  /**
+   * Draw one frame into a context you own, without clearing it. Lets many
+   * instances share a single canvas — clear once yourself, then draw each.
+   */
+  drawInto(ctx: CanvasRenderingContext2D, t: number, transform?: LerpaTransform): void;
   /** Re-read the canvas size and re-fit. Called for you unless autoResize is off. */
   resize(): void;
 

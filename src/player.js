@@ -148,8 +148,11 @@ export class LerpaPlayer {
     if (!doc || (doc.format !== 'lerpa' && doc.format !== 'vecbake')) {
       throw new Error('Lerpa: not an .lerpa document');
     }
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
+    // A *detached* player (canvas === null) owns no surface. It exists only to
+    // be drawn through `drawInto`, which is how you put many instances of one
+    // animation onto a single shared canvas. See `drawInto` for the why.
+    this.canvas = canvas || null;
+    this.ctx = canvas ? canvas.getContext('2d') : null;
     this.doc = doc;
     this.width = doc.w;
     this.height = doc.h;
@@ -213,7 +216,7 @@ export class LerpaPlayer {
     this._sorter = (a, b) => this.depths[b] - this.depths[a];
     this._tick = this._tick.bind(this);
     this.resize();
-    if (typeof ResizeObserver !== 'undefined' && options.autoResize !== false) {
+    if (this.canvas && typeof ResizeObserver !== 'undefined' && options.autoResize !== false) {
       this._ro = new ResizeObserver(() => this.resize());
       this._ro.observe(canvas);
     }
@@ -221,6 +224,14 @@ export class LerpaPlayer {
   }
 
   resize() {
+    // A detached player has nothing to fit itself to: author space *is* the
+    // drawing space, and the caller places it via drawInto's transform.
+    if (!this.canvas) {
+      this.dpr = 1;
+      this.scaleX = this.scaleY = 1;
+      this.offX = this.offY = 0;
+      return;
+    }
     const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
     const rect = this.canvas.getBoundingClientRect();
     const cw = Math.max(1, Math.round(rect.width || this.width));
@@ -300,9 +311,15 @@ export class LerpaPlayer {
     }
   }
 
-  render(t) {
-    const started = performance.now();
-    const ctx = this.ctx, els = this.elements, n = els.length;
+  /**
+   * Evaluate every element at time `t` and sort the survivors back to front.
+   *
+   * Leaves point positions in `this.scratch` and the draw order in the first
+   * `count` slots of `this.order`, and returns that count. Split out of
+   * `render` so `drawInto` can reuse it.
+   */
+  _solve(t) {
+    const els = this.elements, n = els.length;
     const scratch = this.scratch, depths = this.depths, order = this.order;
     let count = 0, i, el;
 
@@ -317,32 +334,24 @@ export class LerpaPlayer {
     }
     this.visible = count;
 
-    const view = order.subarray(0, count);
-    Array.prototype.sort.call(view, this._sorter);   // far -> near
+    // subarray shares memory with `order`, so this sorts it in place
+    Array.prototype.sort.call(order.subarray(0, count), this._sorter);   // far -> near
+    return count;
+  }
 
-    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    const w = this.canvas.width / this.dpr, h = this.canvas.height / this.dpr;
-    // Always clear first. Painting the background over the previous frame is
-    // not enough: any colour with alpha -- including the literal 'transparent'
-    // -- composites as a no-op in source-over, so nothing gets erased and every
-    // frame smears on top of the last.
-    ctx.clearRect(0, 0, w, h);
-    if (this.background) { ctx.fillStyle = this.background; ctx.fillRect(0, 0, w, h); }
-    ctx.setTransform(this.scaleX * this.dpr, 0, 0, this.scaleY * this.dpr,
-                     this.offX * this.dpr, this.offY * this.dpr);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    let j = 0;
+  /** Paint `count` already-solved elements under whatever transform ctx carries. */
+  _paint(ctx, t, count) {
+    const els = this.elements, scratch = this.scratch, order = this.order;
+    let el, j = 0;
     while (j < count) {
-      el = els[view[j]];
+      el = els[order[j]];
       if (el.kind === STROKE) {
         // batch the run of identically styled strokes into one path
         const css = this._css(el, 1), width = el.width, alpha = el.alpha;
         ctx.beginPath();
         let k = j;
         while (k < count) {
-          const e2 = els[view[k]];
+          const e2 = els[order[k]];
           if (e2.kind !== STROKE || e2.width !== width || e2.alpha !== alpha ||
               this._css(e2, 1) !== css) break;
           this._trace(ctx, scratch, e2, e2.closed);
@@ -375,7 +384,78 @@ export class LerpaPlayer {
         j++;
       }
     }
-    ctx.globalAlpha = 1;
+  }
+
+  /**
+   * Draw one frame into a context the caller owns -- *without* clearing it.
+   *
+   * `render` wipes its whole canvas before drawing, which is correct when the
+   * player owns that canvas and wrong the moment two of them share one: the
+   * second wipes away the first. `drawInto` is the sharing-friendly half. Wipe
+   * once yourself, then draw as many instances as you like onto the same
+   * surface. That keeps the browser compositing a single layer instead of one
+   * per instance, which is what actually costs you at a hundred of them.
+   *
+   * Instances are still separate players over one shared, read-only document,
+   * so each keeps its own clock and its own `setGroupColor`. Note they do each
+   * decode their own copy of the animation tracks -- a few KB for something
+   * small, but not something to do a hundred times with a heavy scene.
+   *
+   * @param {CanvasRenderingContext2D} ctx destination, transform already set
+   * @param {number} t time in seconds
+   * @param {object} [transform] convenience placement, applied on top of ctx's
+   *   own transform. `x`,`y` position the anchor; `scale` (or `scaleX`/`scaleY`)
+   *   sizes it; `rotation` is radians clockwise about the anchor; `anchor` is
+   *   `'center'` (default) or `'topleft'`.
+   *
+   * @example
+   * ctx.clearRect(0, 0, w, h);
+   * for (const b of butterflies) {
+   *   b.player.drawInto(ctx, b.t, { x: b.x, y: b.y, rotation: b.heading, scale: 0.4 });
+   * }
+   */
+  drawInto(ctx, t, transform) {
+    const count = this._solve(t);
+    // save/restore so we cannot leak our fillStyle, alpha or transform back to
+    // the caller -- they are drawing other things onto this same context
+    ctx.save();
+    if (transform) {
+      const x = transform.x || 0, y = transform.y || 0;
+      const rotation = transform.rotation || 0;
+      const s = transform.scale === undefined ? 1 : transform.scale;
+      const sx = transform.scaleX === undefined ? s : transform.scaleX;
+      const sy = transform.scaleY === undefined ? s : transform.scaleY;
+      ctx.translate(x, y);
+      if (rotation) ctx.rotate(rotation);
+      if (sx !== 1 || sy !== 1) ctx.scale(sx, sy);
+      // Author space runs 0..w, 0..h from the top-left, so centring means
+      // stepping back by half the artwork *after* rotating and scaling --
+      // otherwise the drawing swings around its own corner.
+      if (transform.anchor !== 'topleft') ctx.translate(-this.width / 2, -this.height / 2);
+    }
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    this._paint(ctx, t, count);
+    ctx.restore();
+  }
+
+  render(t) {
+    if (!this.ctx) return;            // detached: drawInto is the only way in
+    const started = performance.now();
+    const ctx = this.ctx;
+
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    const w = this.canvas.width / this.dpr, h = this.canvas.height / this.dpr;
+    // Always clear first. Painting the background over the previous frame is
+    // not enough: any colour with alpha -- including the literal 'transparent'
+    // -- composites as a no-op in source-over, so nothing gets erased and every
+    // frame smears on top of the last.
+    ctx.clearRect(0, 0, w, h);
+    if (this.background) { ctx.fillStyle = this.background; ctx.fillRect(0, 0, w, h); }
+    ctx.setTransform(this.scaleX * this.dpr, 0, 0, this.scaleY * this.dpr,
+                     this.offX * this.dpr, this.offY * this.dpr);
+
+    this.drawInto(ctx, t);
     this.lastRenderMs = performance.now() - started;
   }
 
