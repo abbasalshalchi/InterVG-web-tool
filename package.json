@@ -1,6 +1,6 @@
 {
   "name": "lerpa-player",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Interactive vector animations for the web. A .lerpa is a valid SVG that also animates.",
   "type": "module",
   "license": "AGPL-3.0-or-later",
