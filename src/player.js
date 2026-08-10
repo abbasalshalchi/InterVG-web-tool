@@ -13,16 +13,144 @@
 
 const STROKE = 0;
 
-function parseColor(css) {
-  if (css[0] === '#') {
-    if (css.length === 4) {
-      return [parseInt(css[1] + css[1], 16), parseInt(css[2] + css[2], 16), parseInt(css[3] + css[3], 16)];
-    }
-    const n = parseInt(css.slice(1), 16);
-    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+const HEX_RE = /^#([0-9a-f]{3,8})$/i;
+const FUNC_RE = /^(rgba?|hsla?)\(([^)]*)\)$/i;
+
+const clamp = (v, hi) => (v < 0 ? 0 : v > hi ? hi : v);
+
+/**
+ * Split the inside of a colour function.
+ *
+ * `rgb(1, 2, 3)`, `rgb(1 2 3)` and `rgb(1 2 3 / 40%)` all have to work: the
+ * legacy comma form and the modern space form are both valid CSS. Everything
+ * after `/` is alpha, which we drop -- see parseColor.
+ */
+const splitArgs = (body) => body.split('/')[0].trim().split(/[\s,]+/).filter(Boolean);
+
+/** `50%` -> half of `full`; a bare number passes through. */
+function channel(token, full) {
+  const v = parseFloat(token);
+  if (!isFinite(v)) return 0;
+  return token.endsWith('%') ? (v / 100) * full : v;
+}
+
+/**
+ * Saturation / lightness, always as 0..1.
+ *
+ * CSS Color 4 lets these be written bare, where `70` means the same as `70%`,
+ * so both divide by 100.
+ */
+const slPart = (token) => clamp((parseFloat(token) || 0) / 100, 1);
+
+/** Hue in any CSS angle unit, folded into 0..360. */
+function hueDegrees(token) {
+  const v = parseFloat(token) || 0;
+  if (/turn$/i.test(token)) return (((v * 360) % 360) + 360) % 360;
+  if (/rad$/i.test(token)) return ((((v * 180) / Math.PI) % 360) + 360) % 360;
+  if (/grad$/i.test(token)) return (((v * 0.9) % 360) + 360) % 360;
+  return ((v % 360) + 360) % 360;
+}
+
+function hslToRgb(h, s, l) {
+  const k = (n) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+  return [Math.round(255 * f(0)), Math.round(255 * f(8)), Math.round(255 * f(4))];
+}
+
+let probeCtx;   // lazily made once, module-level, only for the fallback below
+
+/**
+ * Last resort: let the browser parse it.
+ *
+ * Covers named colours ('tomato'), and anything newer than this file knows
+ * about -- lab(), oklch(), color-mix(). Returns null when there is no DOM, so
+ * server rendering still works.
+ */
+function parseViaCanvas(css) {
+  if (typeof document === 'undefined') return null;
+  if (probeCtx === undefined) {
+    try {
+      const c = document.createElement('canvas');
+      c.width = c.height = 1;                    // one pixel is all we read
+      probeCtx = c.getContext('2d', { willReadFrequently: true });
+    } catch { probeCtx = null; }
   }
-  const m = css.match(/(\d+(\.\d+)?)/g);
-  return m ? [+m[0], +m[1], +m[2]] : [0, 0, 0];
+  if (!probeCtx) return null;
+  // Assigning an invalid colour to fillStyle is a no-op -- it silently keeps
+  // whatever was there. So assign over two different knowns: if the browser
+  // understood the value both land on it, and if it did not they differ.
+  probeCtx.fillStyle = '#000000';
+  probeCtx.fillStyle = css;
+  const first = probeCtx.fillStyle;
+  probeCtx.fillStyle = '#ffffff';
+  probeCtx.fillStyle = css;
+  if (first !== probeCtx.fillStyle) return null;
+
+  // Paint one pixel and read it back, rather than re-parsing the serialised
+  // fillStyle. Wide-gamut values do not serialise to hex or rgba() -- an
+  // oklch() stays an oklch() -- so string round-tripping drops exactly the
+  // colours this fallback exists to catch. A pixel is always sRGB bytes.
+  // 'copy' rather than the default blend, so a translucent colour replaces the
+  // pixel instead of compositing with whatever was under it.
+  const prev = probeCtx.globalCompositeOperation;
+  probeCtx.globalCompositeOperation = 'copy';
+  probeCtx.fillRect(0, 0, 1, 1);
+  probeCtx.globalCompositeOperation = prev;
+  const d = probeCtx.getImageData(0, 0, 1, 1).data;
+  return [d[0], d[1], d[2]];
+}
+
+/**
+ * CSS colour -> [r, g, b], each 0..255.
+ *
+ * Handles `#hex` in 3, 4, 6 and 8 digits, plus `rgb()`/`rgba()` and
+ * `hsl()`/`hsla()` in both the comma and space syntaxes; anything else goes to
+ * the browser. Alpha is parsed off and discarded, because element opacity is
+ * its own animated track and a colour carrying alpha too would multiply twice.
+ *
+ * An unrecognised value comes back black rather than throwing: one bad colour
+ * should not take down the whole animation.
+ *
+ * This used to be "find the first three numbers in the string", which quietly
+ * read `hsl(210 70% 60%)` as `rgb(210, 70, 60)` -- a hue becoming a red channel,
+ * wrong but plausible enough to look like a design choice rather than a bug.
+ */
+function parseColor(css) {
+  if (typeof css !== 'string') return [0, 0, 0];
+  const s = css.trim();
+
+  const hex = HEX_RE.exec(s);
+  if (hex) {
+    const h = hex[1];
+    // #rgb and #rgba: every digit doubles. The 4th is alpha -- it must be
+    // recognised so it is not mistaken for part of the colour.
+    if (h.length === 3 || h.length === 4) {
+      return [parseInt(h[0] + h[0], 16), parseInt(h[1] + h[1], 16), parseInt(h[2] + h[2], 16)];
+    }
+    // #rrggbb and #rrggbbaa. Slicing rather than shifting one big integer,
+    // because 8 digits overflows the sign bit and `>>` would return nonsense.
+    if (h.length === 6 || h.length === 8) {
+      return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+    }
+    return [0, 0, 0];                       // 5 or 7 digits is not a colour
+  }
+
+  const fn = FUNC_RE.exec(s);
+  if (fn) {
+    const args = splitArgs(fn[2]);
+    if (args.length < 3) return [0, 0, 0];
+    if (fn[1].toLowerCase().startsWith('rgb')) {
+      return [
+        Math.round(clamp(channel(args[0], 255), 255)),
+        Math.round(clamp(channel(args[1], 255), 255)),
+        Math.round(clamp(channel(args[2], 255), 255)),
+      ];
+    }
+    return hslToRgb(hueDegrees(args[0]), slPart(args[1]), slPart(args[2]));
+  }
+
+  return parseViaCanvas(s) || [0, 0, 0];
 }
 
 /**
