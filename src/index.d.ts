@@ -48,6 +48,13 @@ export interface LerpaPlayOptions {
   from?: number;
 }
 
+export interface LerpaBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export interface LerpaHit {
   /** The element's stable id, when the bake shipped ids. */
   id: string | null;
@@ -112,6 +119,17 @@ export declare class LerpaPlayer {
   /** Recolour every element in a group. Live data binding, no re-bake. */
   setGroupColor(group: string, css: string): this;
   setElementColor(id: string, css: string): this;
+
+  /** Fade or hide a group. 0 hides, 1 restores, null drops the override. */
+  setGroupOpacity(group: string, alpha: number | null): this;
+  setElementOpacity(id: string, alpha: number | null): this;
+  /** Show only these groups; `rest` is what the others drop to (0 hides). */
+  isolateGroups(groups: string | string[] | null, rest?: number): this;
+  /** Where a group sits on screen at `t`, in author coordinates. */
+  groupBounds(group: string | string[], t?: number): LerpaBox | null;
+  /** Zoom and pan so a group fills the canvas. Keeps `pick` in agreement. */
+  frameGroup(group: string | string[],
+             options?: { padding?: number; time?: number }): LerpaBox | null;
   /** Recolour one palette swatch, and everything drawn in it. */
   setColor(index: number, css: string): this;
 
